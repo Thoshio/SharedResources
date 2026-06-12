@@ -1,16 +1,21 @@
 #include <zephyr/kernel.h>
 
+K_MUTEX_DEFINE(vitrine_acesso);
+
 // Contador para simular diferentes tipos de pão
 static volatile int saldo_vitrine = 0;
 
 int padeiro_thread(void)
 {
-    while (1) {        
+    while (1) {
         // Simula tempo para fazer o pão
         k_msleep(1000);  // 1 segundo para fazer pão
         
-        // Faz o pão e coloca na vitrine
-        saldo_vitrine += 1;
+
+        k_mutex_lock(&vitrine_acesso, K_FOREVER); //trava variavel
+            // Faz o pão e coloca na vitrine
+            saldo_vitrine += 1;
+        k_mutex_unlock(&vitrine_acesso);//destrava variavel
         
         printk("\nPADEIRO: Pao pronto\nVitrine com %d pao(es)\n", saldo_vitrine);
     }
@@ -22,8 +27,12 @@ void cliente_thread(void)
          // Simula tempo para retirar o pão
         k_msleep(1500);  // 1.5 segundos
 
-        // Pega o pão do buffer
-        saldo_vitrine -= 1;
+
+        k_mutex_lock(&vitrine_acesso, K_FOREVER); //trava variavel
+            // Pega o pão do buffer
+            saldo_vitrine -= 1;
+        k_mutex_unlock(&vitrine_acesso);//destrava variavel
+
         
         printk("\nCLIENTE: Peguei pao\nVitrine com %d pao(es)\n", saldo_vitrine);
     }
